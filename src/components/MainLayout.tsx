@@ -1,8 +1,8 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext'; // Adicione este import
+import { useAuth } from '../context/AuthContext';
 
-const MainLayout = ({ children }) => {
-  const { user, logout } = useAuth(); // A lógica deve estar aqui em cima
+const MainLayout = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth(); // user será null até que o login seja feito
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
@@ -14,13 +14,15 @@ const MainLayout = ({ children }) => {
           
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
+              {/* Note a interrogação (?) antes de ler as propriedades do user */}
               <p className="text-xs font-medium text-slate-500">Olá, {user?.name || 'Visitante'}</p>
               <p className="text-xs text-indigo-500 font-bold">⭐ {user?.totalPoints || 0} pts</p>
             </div>
+            {/* Imagem de fallback caso não exista usuário logado */}
             <img 
-              src={user.avatar_url || 'https://via.placeholder.com/40'} 
+              src={user?.avatar_url || 'https://ui-avatars.com/api/?name=Visitante&background=random'} 
               alt="Avatar" 
-              className="w-10 h-10 rounded-full border-2 border-indigo-100 shadow-sm"
+              className="w-10 h-10 rounded-full border-2 border-indigo-100 shadow-sm bg-slate-100"
             />
           </div>
         </div>
@@ -42,8 +44,7 @@ const MainLayout = ({ children }) => {
   );
 };
 
-
-const NavItem = ({ icon, label, active = false }) => (
+const NavItem = ({ icon, label, active = false }: any) => (
   <button className={`flex flex-col items-center gap-1 transition-colors ${active ? 'text-indigo-600' : 'text-slate-400'}`}>
     <span className="text-xl">{icon}</span>
     <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
