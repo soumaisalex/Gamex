@@ -31,22 +31,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  const loginWithGoogle = (credentialResponse: any) => {
+  // Login com o Google
+  
+const loginWithGoogle = async (credentialResponse: any) => {
     const decoded: any = jwtDecode(credentialResponse.credential);
     
-    const newUser: User = {
-      id: decoded.sub, // ID único do Google
+    const googleUser = {
+      id: decoded.sub,
       name: decoded.name,
       email: decoded.email,
       avatar_url: decoded.picture,
-      totalPoints: 0,
-      isGuest: false
     };
 
-    setUser(newUser);
-    localStorage.setItem('@GeGames:user', JSON.stringify(newUser));
+    try {
+      // 1. Envia para o seu banco de dados via API
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(googleUser)
+      });
+
+      const dbUser = await response.json();
+
+      // 2. Salva no estado o usuário que veio DO BANCO (com o ID real do Neon)
+      const finalUser: User = {
+        id: dbUser.id, // Aqui usamos o UUID gerado pelo Neon
+        name: dbUser.name,
+        email: dbUser.email,
+        avatar_url: dbUser.avatar_url,
+        totalPoints: dbUser.total_points || 0,
+        isGuest: false
+      };
+
+      setUser(finalUser);
+      localStorage.setItem('@GeGames:user', JSON.stringify(finalUser));
+      
+    } catch (error) {
+      console.error("Erro ao registrar usuário no banco:", error);
+    }
   };
 
+  // Login como Convidado
   const loginAsGuest = () => {
     const guestUser: User = {
       id: `guest_${Math.random().toString(36).substr(2, 9)}`,
