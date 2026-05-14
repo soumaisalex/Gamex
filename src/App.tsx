@@ -7,9 +7,8 @@ const AppContent = () => {
 
   if (loading) return <div className="flex items-center justify-center h-screen">Carregando...</div>;
 
-  return (
+return (
     <>
-      {/* Se não houver usuário, trava a tela com o Modal de Login */}
       {!user && (
         <LoginModal 
           onGoogleLogin={loginWithGoogle} 
@@ -17,8 +16,10 @@ const AppContent = () => {
         />
       )}
       
-      {/* A página do Lobby só é interagível se houver user */}
-      <Lobby />
+      {/* Adicionamos um blur ou desabilitamos a interação se não houver user */}
+      <div className={!user ? 'blur-sm pointer-events-none select-none' : ''}>
+        <Lobby />
+      </div>
     </>
   );
 };
