@@ -2,6 +2,7 @@ import React from 'react';
 
 const MainLayout = ({ children, user }) => {
   return (
+    const { user, logout } = useAuth();
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
       
       {/* HEADER - Mobile First */}
@@ -11,8 +12,8 @@ const MainLayout = ({ children, user }) => {
           
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
-              <p className="text-xs font-medium text-slate-500">Olá, {user.name}</p>
-              <p className="text-xs text-indigo-500 font-bold">⭐ {user.totalPoints} pts</p>
+              <p className="text-xs font-medium text-slate-500">Olá, {user?.name || 'Visitante'}</p>
+              <p className="text-xs text-indigo-500 font-bold">⭐ {user?.totalPoints || 0} pts</p>
             </div>
             <img 
               src={user.avatar_url || 'https://via.placeholder.com/40'} 
