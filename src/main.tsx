@@ -1,12 +1,11 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import App from './App';
-import './index.css';
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { GoogleOAuthProvider } from '@react-oauth/google'
+import App from './App'
+import './index.css'
 
-// Usaremos uma variável de ambiente, mas por enquanto você pode deixar a string vazia 
-// ou colocar o seu Client ID caso já tenha um.
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+// Puxa a chave que configuraste no Cloudflare
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ""
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -14,4 +13,4 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <App />
     </GoogleOAuthProvider>
   </React.StrictMode>,
-);
+)
