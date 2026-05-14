@@ -1,8 +1,10 @@
 import React from 'react';
+import { useAuth } from '../context/AuthContext'; // Adicione este import
 
-const MainLayout = ({ children, user }) => {
+const MainLayout = ({ children }) => {
+  const { user, logout } = useAuth(); // A lógica deve estar aqui em cima
+
   return (
-    const { user, logout } = useAuth();
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
       
       {/* HEADER - Mobile First */}
@@ -39,6 +41,7 @@ const MainLayout = ({ children, user }) => {
     </div>
   );
 };
+
 
 const NavItem = ({ icon, label, active = false }) => (
   <button className={`flex flex-col items-center gap-1 transition-colors ${active ? 'text-indigo-600' : 'text-slate-400'}`}>
