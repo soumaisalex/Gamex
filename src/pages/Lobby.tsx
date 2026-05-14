@@ -18,22 +18,22 @@ const Lobby = () => {
 const [selectedGame, setSelectedGame] = useState<null | { id: number, name: string }>(null);
 
 // No clique do botão "Jogar" do GameCard:
-const handleOpenRanking = (id: number, name: string) => {
-  // 1. Fetch dos dados do ranking no Neon (via API)
-  // 2. Abrir o modal
-  setSelectedGame({ id, name });
-};
+// Adicione este estado para os dados do ranking
+const [rankingData, setRankingData] = useState([]);
+const [isRankingLoading, setIsRankingLoading] = useState(false);
 
-return (
-  <>
-    {/* ... rest of the Lobby ... */}
-    {selectedGame && (
-      <RankingModal 
-        gameName={selectedGame.name}
-        data={mockData} // Aqui virão os dados do Neon
-        onClose={() => setSelectedGame(null)}
-        onPlay={() => console.log('Iniciar jogo:', selectedGame.id)}
-      />
-    )}
-  </>
-);
+const handleOpenRanking = async (id: number, name: string) => {
+  setSelectedGame({ id, name });
+  setIsRankingLoading(true);
+
+  try {
+    // Chamada para a nossa nova Function do Cloudflare
+    const response = await fetch(`/api/ranking?gameId=${id}`);
+    const data = await response.json();
+    setRankingData(data);
+  } catch (error) {
+    console.error("Erro ao carregar ranking:", error);
+  } finally {
+    setIsRankingLoading(false);
+  }
+};
