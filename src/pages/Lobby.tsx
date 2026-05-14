@@ -8,31 +8,46 @@ import { useAuth } from '../context/AuthContext';
 const Lobby = () => {
   const { user, logout } = useAuth();
   
-  // Controle do Menu Inferior
+  // Controle das Abas (Navegação Inferior)
   const [activeTab, setActiveTab] = useState('home');
   
-  // Controle dos Jogos (Seus códigos atuais)
+  // Controle do Jogo Ativo e Modal de Ranking
   const [selectedGame, setSelectedGame] = useState<null | { id: number, name: string }>(null);
   const [rankingData, setRankingData] = useState([]);
   const [isRankingLoading, setIsRankingLoading] = useState(false);
   const [activeGameId, setActiveGameId] = useState<number | null>(null);
 
+  // Função que abre o modal e busca os dados no Neon
   const handleOpenRanking = async (id: number, name: string) => {
-    // ... seu código de fetch do ranking continua igual
+    setSelectedGame({ id, name });
+    setIsRankingLoading(true);
+    try {
+      const response = await fetch(`/api/ranking?gameId=${id}`);
+      const data = await response.json();
+      setRankingData(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Erro ao carregar ranking:", error);
+      setRankingData([]);
+    } finally {
+      setIsRankingLoading(false);
+    }
   };
 
+  // Função que esconde o modal e monta o Jogo da Velha na tela
   const handlePlayGame = () => {
-    // ... seu código de iniciar o jogo continua igual
+    if (selectedGame) {
+      setActiveGameId(selectedGame.id);
+      setSelectedGame(null); // Esconde o modal
+    }
   };
 
   return (
     <MainLayout activeTab={activeTab} onTabChange={setActiveTab}>
       
-      {/* ============================== */}
-      {/* ABA 1: INÍCIO (Onde ficam os jogos) */}
-      {/* ============================== */}
+      {/* ABA INÍCIO */}
       {activeTab === 'home' && (
         !activeGameId ? (
+          // Mostra a Grade de Jogos se não houver jogo ativo
           <div className="animate-in fade-in duration-300">
             <section className="mb-8">
               <h2 className="text-2xl font-black text-slate-800">Seus Jogos</h2>
@@ -51,15 +66,14 @@ const Lobby = () => {
             )}
           </div>
         ) : (
-          <div className="pt-4">
+          // Mostra o Tabuleiro do Jogo se houver jogo ativo
+          <div className="pt-4 animate-in zoom-in-95 duration-300">
             {activeGameId === 1 && <TicTacToeGame onBack={() => setActiveGameId(null)} />}
           </div>
         )
       )}
 
-      {/* ============================== */}
-      {/* ABA 2: RANKING GLOBAL */}
-      {/* ============================== */}
+      {/* ABA RANKING */}
       {activeTab === 'ranking' && (
         <div className="text-center py-12 animate-in fade-in duration-300">
           <div className="text-5xl mb-4">🏆</div>
@@ -68,9 +82,7 @@ const Lobby = () => {
         </div>
       )}
 
-      {/* ============================== */}
-      {/* ABA 3: AMIGOS */}
-      {/* ============================== */}
+      {/* ABA AMIGOS */}
       {activeTab === 'friends' && (
         <div className="text-center py-12 animate-in fade-in duration-300">
           <div className="text-5xl mb-4">👥</div>
@@ -79,15 +91,13 @@ const Lobby = () => {
         </div>
       )}
 
-      {/* ============================== */}
-      {/* ABA 4: AJUSTES */}
-      {/* ============================== */}
+      {/* ABA AJUSTES */}
       {activeTab === 'settings' && (
         <div className="flex flex-col items-center py-8 animate-in fade-in duration-300">
           <img 
             src={user?.avatar_url || `https://ui-avatars.com/api/?name=${user?.name}`} 
             alt="Avatar" 
-            className="w-24 h-24 rounded-full border-4 border-indigo-100 shadow-md mb-4"
+            className="w-24 h-24 rounded-full border-4 border-indigo-100 shadow-md mb-4 bg-white"
           />
           <h2 className="text-2xl font-black text-slate-800">{user?.name}</h2>
           <p className="text-slate-500 font-medium mb-8">{user?.email || 'Convidado'}</p>
