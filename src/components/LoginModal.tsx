@@ -23,7 +23,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onGoogleLogin, onGuestLogin }) 
             <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-inner">
               🎮
             </div>
-            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Bem-vindo ao GêGames</h2>
+            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Bem-vindo ao Gamex</h2>
             <p className="text-slate-500 mt-2 text-sm px-4">Conecte-se para salvar seu progresso e subir no ranking global.</p>
           </div>
 
