@@ -14,3 +14,26 @@ const Lobby = () => {
     </MainLayout>
   );
 };
+
+const [selectedGame, setSelectedGame] = useState<null | { id: number, name: string }>(null);
+
+// No clique do botão "Jogar" do GameCard:
+const handleOpenRanking = (id: number, name: string) => {
+  // 1. Fetch dos dados do ranking no Neon (via API)
+  // 2. Abrir o modal
+  setSelectedGame({ id, name });
+};
+
+return (
+  <>
+    {/* ... rest of the Lobby ... */}
+    {selectedGame && (
+      <RankingModal 
+        gameName={selectedGame.name}
+        data={mockData} // Aqui virão os dados do Neon
+        onClose={() => setSelectedGame(null)}
+        onPlay={() => console.log('Iniciar jogo:', selectedGame.id)}
+      />
+    )}
+  </>
+);
