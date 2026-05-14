@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { jwtDecode } from 'jwt-decode';
 
 interface User {
   id: string;
   name: string;
+  email: string;
   avatar_url: string;
   totalPoints: number;
   isGuest: boolean;
@@ -11,11 +12,11 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  loginWithGoogle: () => void;
+  loginWithGoogle: (credentialResponse: any) => void;
   loginAsGuest: () => void;
   logout: () => void;
   loading: boolean;
-  addPoints: (points: number) => void; // <-- 1. Adicionar isto aqui
+  addPoints: (points: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,25 +25,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-
-  // Verifica se há sessão ao carregar o app
   useEffect(() => {
     const savedUser = localStorage.getItem('@GeGames:user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    if (savedUser) setUser(JSON.parse(savedUser));
     setLoading(false);
   }, []);
 
-  const loginWithGoogle = () => {
-    // Aqui entrará a integração com o Google GSI / Firebase / Neon
-    console.log("Iniciando fluxo Google...");
+  const loginWithGoogle = (credentialResponse: any) => {
+    const decoded: any = jwtDecode(credentialResponse.credential);
+    
+    const newUser: User = {
+      id: decoded.sub, // ID único do Google
+      name: decoded.name,
+      email: decoded.email,
+      avatar_url: decoded.picture,
+      totalPoints: 0,
+      isGuest: false
+    };
+
+    setUser(newUser);
+    localStorage.setItem('@GeGames:user', JSON.stringify(newUser));
   };
 
   const loginAsGuest = () => {
     const guestUser: User = {
-      id: crypto.randomUUID(),
-      name: `Jogador_${Math.floor(1000 + Math.random() * 9000)}`,
+      id: `guest_${Math.random().toString(36).substr(2, 9)}`,
+      name: 'Convidado',
+      email: '',
       avatar_url: '',
       totalPoints: 0,
       isGuest: true
@@ -51,12 +60,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('@GeGames:user', JSON.stringify(guestUser));
   };
 
-  const logout = () => {
-    localStorage.removeItem('@GeGames:user');
-    setUser(null);
-  };
-
-  // 2. Criar a função que soma os pontos
   const addPoints = (points: number) => {
     if (user) {
       const updatedUser = { ...user, totalPoints: (user.totalPoints || 0) + points };
@@ -65,8 +68,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('@GeGames:user');
+  };
+
   return (
-    // 3. Não esquecer de passar o addPoints no value do Provider
     <AuthContext.Provider value={{ user, loginWithGoogle, loginAsGuest, logout, loading, addPoints }}>
       {children}
     </AuthContext.Provider>
