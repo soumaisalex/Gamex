@@ -12,9 +12,40 @@ const TicTacToeGame: React.FC<TicTacToeProps> = ({ onBack }) => {
   const [board, setBoard] = useState<Player[]>(Array(9).fill(null));
   const [isPlayerTurn, setIsPlayerTurn] = useState<boolean>(true); // Player é sempre 'X'
   const [winner, setWinner] = useState<Player | 'Draw'>(null);
-
+  
+  const [scoreSaved, setScoreSaved] = useState(false); // Previne envio duplo
+  const { user, addPoints } = useAuth(); // Puxa também a função addPoints
   const { user } = useAuth(); // Puxa quem está jogando
+  
+  // Efeito que dispara a pontuação
+  useEffect(() => {
+    if (winner && !scoreSaved) {
+      let earnedPoints = 0;
+      if (winner === 'X') earnedPoints = 3;
+      else if (winner === 'Draw') earnedPoints = 1;
 
+      if (earnedPoints > 0 && user) {
+        // 1. Atualiza o ecrã (Header) instantaneamente
+        addPoints(earnedPoints);
+
+        // 2. Envia para o banco de dados (Worker)
+        fetch('/api/save-score', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            gameId: 1, // 1 = Jogo da Velha
+            points: earnedPoints,
+            isGuest: user.isGuest
+          })
+        }).catch(err => console.error("Erro ao salvar pontos:", err));
+      }
+      
+      setScoreSaved(true); // Marca como salvo para não repetir
+    }
+  }, [winner, scoreSaved, user, addPoints]);
+
+  
   // Novo Efeito: Dispara quando o "winner" for definido
   useEffect(() => {
     if (winner) {
@@ -140,6 +171,7 @@ const TicTacToeGame: React.FC<TicTacToeProps> = ({ onBack }) => {
     setBoard(Array(9).fill(null));
     setWinner(null);
     setIsPlayerTurn(true);
+    setScoreSaved(false); // Liberta para o próximo jogo!
   };
 
   return (
