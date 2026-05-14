@@ -33,7 +33,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab = 'home', o
             <img 
               src={user?.avatar_url || `https://ui-avatars.com/api/?name=${user?.name || 'Visitante'}`} 
               alt="Avatar" 
-              onClick={() => onTabChange?.('settings')} /}
+              onClick={() => onTabChange?.('settings')}}
               className="w-10 h-10 rounded-full border-2 border-indigo-100 shadow-sm cursor-pointer"
             />
           </div>
