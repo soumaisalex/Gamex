@@ -1,36 +1,36 @@
 import { neon } from '@neondatabase/serverless';
 
-export const onRequest: PagesFunction<{ DATABASE_URL: string }> = async (context) => {
-  // 1. Pegar o ID do jogo via Query String (ex: /api/ranking?gameId=1)
-  const { searchParams } = new URL(context.request.url);
-  const gameId = searchParams.get('gameId');
-
-  if (!gameId) {
-    return new Response(JSON.stringify({ error: 'gameId é obrigatório' }), { status: 400 });
-  }
-
-  // 2. Conectar ao Neon usando a variável de ambiente configurada no painel do Cloudflare
-  const sql = neon(context.env.DATABASE_URL);
-
+export const onRequestGet: PagesFunction<{ DATABASE_URL: string }> = async (context) => {
   try {
-    // 3. Executar a Query do Top 10
-    const results = await sql`
+    const { searchParams } = new URL(context.request.url);
+    const gameId = searchParams.get('gameId');
+
+    if (!gameId) {
+      return new Response(JSON.stringify({ error: 'ID do jogo não fornecido' }), { status: 400 });
+    }
+
+    const sql = neon(context.env.DATABASE_URL);
+
+    // Busca o Top 10 fazendo JOIN para pegar os dados do usuário
+    const ranking = await sql`
       SELECT 
         u.name, 
         u.avatar_url, 
-        l.points,
-        RANK() OVER (ORDER BY l.points DESC) as position
+        l.points
       FROM leaderboards l
       JOIN users u ON l.user_id = u.id
-      WHERE l.game_id = ${parseInt(gameId)}
+      WHERE l.game_id = ${gameId}
       ORDER BY l.points DESC
       LIMIT 10
     `;
 
-    return new Response(JSON.stringify(results), {
-      headers: { 'Content-Type': 'application/json' },
+    return new Response(JSON.stringify(ranking), {
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store' // Garante que o ranking venha sempre fresco
+      },
     });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: 'Erro ao buscar ranking' }), { status: 500 });
+  } catch (error: any) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 };
