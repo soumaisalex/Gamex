@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 type Player = 'X' | 'O' | null;
 
@@ -12,6 +13,32 @@ const TicTacToeGame: React.FC<TicTacToeProps> = ({ onBack }) => {
   const [isPlayerTurn, setIsPlayerTurn] = useState<boolean>(true); // Player é sempre 'X'
   const [winner, setWinner] = useState<Player | 'Draw'>(null);
 
+  const { user } = useAuth(); // Puxa quem está jogando
+
+  // Novo Efeito: Dispara quando o "winner" for definido
+  useEffect(() => {
+    if (winner) {
+      let earnedPoints = 0;
+      if (winner === 'X') earnedPoints = 3;      // Vitória
+      else if (winner === 'Draw') earnedPoints = 1; // Empate
+      // 'O' (IA) dá 0 pontos
+
+      if (earnedPoints > 0 && user) {
+        // Envia para o nosso novo Worker
+        fetch('/api/save-score', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            gameId: 1, // ID 1 = Jogo da Velha (como está no seu banco)
+            points: earnedPoints,
+            isGuest: user.isGuest
+          })
+        }).catch(err => console.error("Erro ao salvar pontos:", err));
+      }
+    }
+  }, [winner, user]);
+  
   // Verifica as combinações de vitória
   const checkWinner = (squares: Player[]) => {
     const lines = [
