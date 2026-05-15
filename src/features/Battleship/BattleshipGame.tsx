@@ -87,23 +87,16 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
   };
   
   const saveVictory = async () => {
-    try {
-      // Chamada para a API que grava no Neon (mesma lógica do Jogo da Velha)
-      await fetch('/api/leaderboards', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: user?.email,
-          game_id: 2, // ID da Batalha Naval
-          points: 20  // Pontuação por vitória no grid 10x10
-        })
-      });
-      
-      // Atualiza o estado global para o Header refletir na hora
-      addPoints(20); 
-    } catch (error) {
-      console.error("Erro ao salvar pontos da Batalha Naval:", error);
-    }
+    await fetch('/api/leaderboards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: user?.email,
+        game_id: 2, // ID da Batalha Naval no seu banco
+        points: 20
+      })
+    });
+    addPoints(20);
   };
   
   const executeRadar = (board: Board, r: number, c: number) => {
