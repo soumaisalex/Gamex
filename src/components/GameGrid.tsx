@@ -31,10 +31,10 @@ const GameGrid = ({ onOpenRanking }: { onOpenRanking: (id: number, name: string)
     {
       id: 3,
       title: "Dominó",
-      description: "Em desenvolvimento...",
+      description: "Encaixe suas pedras antes da IA.",
       icon: "🎲",
-      status: "EM BREVE",
-      isLocked: true // Mantemos travado até criarmos a lógica
+      status: "NOVO",
+      isLocked: false // DESTRAVADO!
     }
   ];
 
