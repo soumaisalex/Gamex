@@ -265,4 +265,13 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
               <div className="text-5xl mb-4">🏆</div>
               <h3 className="text-2xl font-black text-slate-800 mb-2">Fim de Jogo</h3>
               <p className="text-slate-500 font-medium mb-8 leading-relaxed">{message}</p>
-              <button
+              <button onClick={startNewGame} className="w-full py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-indigo-200 shadow-xl hover:bg-indigo-700 transition-all">JOGAR NOVAMENTE</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default DominoGame;
