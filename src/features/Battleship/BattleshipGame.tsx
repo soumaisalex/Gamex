@@ -5,7 +5,7 @@ type CellState = 'empty' | 'miss' | 'radar' | string;
 type Board = CellState[][];
 type Weapon = 'normal' | 'radar' | 'cross';
 
-const GRID_SIZE = 8;
+const GRID_SIZE = 8; // Ajustado para 8x8
 const FLEET_SIZES = [5, 4, 3, 3, 2];
 
 const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
@@ -17,6 +17,10 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
   const [turn, setTurn] = useState<'player' | 'enemy'>('player');
   const [gameOver, setGameOver] = useState(false);
   const [message, setMessage] = useState('Capitão, a frota aguarda suas ordens!');
+
+  // Estoque de Munição Especial
+  const [radarCount, setRadarCount] = useState(2);
+  const [crossCount, setCrossCount] = useState(1);
 
   useEffect(() => {
     setEnemyBoard(generateRandomBoardWithFleet());
@@ -88,7 +92,7 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
       });
 
       if (response.ok) {
-        addPoints(20); // Atualiza o estado global e localStorage
+        addPoints(20); 
       }
     } catch (error) {
       console.error("Erro ao salvar vitória:", error);
@@ -100,9 +104,16 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
 
     const newEnemyBoard = [...enemyBoard.map(r => [...r])];
 
-    if (selectedWeapon === 'normal') executeAttack(newEnemyBoard, row, col);
-    else if (selectedWeapon === 'radar') executeRadar(newEnemyBoard, row, col);
-    else if (selectedWeapon === 'cross') executeCrossShot(newEnemyBoard, row, col);
+    // Desconta do estoque ao atirar
+    if (selectedWeapon === 'normal') {
+      executeAttack(newEnemyBoard, row, col);
+    } else if (selectedWeapon === 'radar') {
+      executeRadar(newEnemyBoard, row, col);
+      setRadarCount(prev => prev - 1);
+    } else if (selectedWeapon === 'cross') {
+      executeCrossShot(newEnemyBoard, row, col);
+      setCrossCount(prev => prev - 1);
+    }
 
     setEnemyBoard(newEnemyBoard);
 
@@ -141,7 +152,7 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
       setMessage('Derrota. A frota foi afundada.');
     } else {
       setTurn('player');
-      setSelectedWeapon('normal');
+      setSelectedWeapon('normal'); // Sempre volta pro tiro normal após a rodada inimiga
     }
   };
 
@@ -198,13 +209,28 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
           <p className="text-[10px] font-bold text-slate-500 uppercase italic tracking-tight">{message}</p>
         </div>
 
+        {/* Arsenal Dinâmico */}
         <div className={`flex gap-2 mb-4 px-1 ${turn === 'player' ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
-          <WeaponBtn icon="🎯" label="Normal" active={selectedWeapon === 'normal'} onClick={() => setSelectedWeapon('normal')} />
-          <WeaponBtn icon="📡" label="Radar" cost={50} active={selectedWeapon === 'radar'} locked={(user?.totalPoints || 0) < 50} onClick={() => setSelectedWeapon('radar')} />
-          <WeaponBtn icon="➕" label="Cruz" cost={150} active={selectedWeapon === 'cross'} locked={(user?.totalPoints || 0) < 150} onClick={() => setSelectedWeapon('cross')} />
+          <WeaponBtn 
+            icon="🎯" label="Normal" count="∞" 
+            active={selectedWeapon === 'normal'} 
+            onClick={() => setSelectedWeapon('normal')} 
+          />
+          <WeaponBtn 
+            icon="📡" label="Radar" count={radarCount} 
+            active={selectedWeapon === 'radar'} 
+            locked={radarCount === 0} 
+            onClick={() => setSelectedWeapon('radar')} 
+          />
+          <WeaponBtn 
+            icon="➕" label="Cruz" count={crossCount} 
+            active={selectedWeapon === 'cross'} 
+            locked={crossCount === 0} 
+            onClick={() => setSelectedWeapon('cross')} 
+          />
         </div>
 
-        {/* Tabuleiro Inimigo */}
+        {/* Tabuleiro Inimigo (8x8) */}
         <div className="grid grid-cols-8 gap-0.5 bg-slate-200 p-0.5 rounded-lg mb-6 shadow-inner aspect-square">
           {enemyBoard.map((row, rIdx) => row.map((cell, cIdx) => (
             <button key={`e-${rIdx}-${cIdx}`} onClick={() => handleCellClick(rIdx, cIdx)}
@@ -214,7 +240,7 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
           )))}
         </div>
 
-        {/* Sua Frota */}
+        {/* Sua Frota (8x8) */}
         <p className="text-[9px] font-black text-slate-400 uppercase mb-2 ml-1">Sua Frota (Defesa)</p>
         <div className="grid grid-cols-8 gap-0.5 bg-slate-100 p-0.5 rounded-lg opacity-90 scale-[0.98]">
           {playerBoard.map((row, rIdx) => row.map((cell, cIdx) => (
@@ -234,7 +260,7 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
-const WeaponBtn = ({ icon, label, cost, active, locked, onClick }: any) => (
+const WeaponBtn = ({ icon, label, count, active, locked, onClick }: any) => (
   <button 
     onClick={onClick} disabled={locked} 
     className={`flex-1 py-2 rounded-xl border-2 flex flex-col items-center transition-all 
@@ -243,7 +269,10 @@ const WeaponBtn = ({ icon, label, cost, active, locked, onClick }: any) => (
   >
     <span className="text-base">{icon}</span>
     <span className="text-[7px] font-black uppercase tracking-tighter">{label}</span>
-    {cost && <span className="text-[7px] text-indigo-600 font-bold">{cost}p</span>}
+    {/* Ajuste visual para mostrar a quantidade restante em vez do custo */}
+    <span className="text-[7px] text-indigo-600 font-bold mt-0.5">
+      {count === "∞" ? "Infinito" : `${count} Restante${count !== 1 ? 's' : ''}`}
+    </span>
   </button>
 );
 
