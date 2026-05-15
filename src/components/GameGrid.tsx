@@ -1,70 +1,74 @@
 import React from 'react';
 
-interface GameGridProps {
-  onOpenRanking?: (id: number, name: string) => void;
+interface GameCardProps {
+  id: number;
+  title: string;
+  description: string;
+  icon: string;
+  status: string;
+  onOpenRanking: (id: number, name: string) => void;
+  isLocked?: boolean;
 }
 
-const GameGrid: React.FC<GameGridProps> = ({ onOpenRanking }) => {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {/* Jogo da Velha - O Único Liberado por enquanto */}
-      <GameCard 
-        title="Jogo da Velha" 
-        slug="tic-tac-toe" 
-        stats={{ wins: 0 }}
-        onClick={() => onOpenRanking?.(1, 'Jogo da Velha')}
-      />
-      
-      {/* Batalha Naval */}
-      <GameCard 
-        title="Batalha Naval" 
-        slug="battleship" 
-        stats={{ wins: 0 }}
-        isLocked={true}
-      />
+const GameGrid = ({ onOpenRanking }: { onOpenRanking: (id: number, name: string) => void }) => {
+  const games = [
+    {
+      id: 1,
+      title: "Jogo da Velha",
+      description: "Top 10 disponível agora.",
+      icon: "⭕",
+      status: "0 VITÓRIAS",
+      isLocked: false
+    },
+    {
+      id: 2,
+      title: "Batalha Naval",
+      description: "Habilidades especiais liberadas!",
+      icon: "🚢",
+      status: "NOVO",
+      isLocked: false // LIBERADO!
+    },
+    {
+      id: 3,
+      title: "Dominó",
+      description: "Em desenvolvimento...",
+      icon: "🎲",
+      status: "EM BREVE",
+      isLocked: true // Mantemos travado até criarmos a lógica
+    }
+  ];
 
-      {/* Dominó */}
-      <GameCard 
-        title="Dominó" 
-        slug="domino" 
-        stats={{ wins: 0 }}
-        isLocked={true}
-      />
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {games.map((game) => (
+        <div key={game.id} className={`bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col h-full transition-all ${game.isLocked ? 'opacity-75' : 'hover:shadow-md hover:-translate-y-1'}`}>
+          <div className="flex justify-between items-start mb-4">
+            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+              {game.icon}
+            </div>
+            <span className={`text-[10px] font-black px-2 py-1 rounded-lg tracking-wider ${game.isLocked ? 'bg-slate-100 text-slate-400' : 'bg-emerald-50 text-emerald-600'}`}>
+              {game.status}
+            </span>
+          </div>
+          
+          <h3 className="text-xl font-bold text-slate-800 mb-1">{game.title}</h3>
+          <p className="text-sm text-slate-400 mb-6 flex-1">{game.description}</p>
+          
+          <button
+            onClick={() => !game.isLocked && onOpenRanking(game.id, game.title)}
+            disabled={game.isLocked}
+            className={`w-full py-3 rounded-2xl font-bold transition-all ${
+              game.isLocked 
+              ? 'bg-slate-50 text-slate-400 cursor-not-allowed' 
+              : 'bg-slate-50 text-slate-600 hover:bg-indigo-600 hover:text-white shadow-sm'
+            }`}
+          >
+            {game.isLocked ? "Em breve" : "Ver Ranking"}
+          </button>
+        </div>
+      ))}
     </div>
   );
 };
-
-// Sub-componente apenas visual (O Card de cada jogo)
-const GameCard = ({ title, slug, stats, isLocked = false, onClick }: any) => (
-  <div 
-    onClick={!isLocked ? onClick : undefined}
-    className={`bg-white p-5 rounded-2xl border border-slate-200 shadow-sm transition-all ${isLocked ? 'opacity-60 cursor-not-allowed' : 'hover:border-indigo-300 hover:shadow-md cursor-pointer group'}`}
-  >
-    <div className="flex justify-between items-start mb-4">
-      <div className="p-3 bg-indigo-50 rounded-xl text-2xl group-hover:scale-110 transition-transform">
-        {slug === 'tic-tac-toe' ? '⭕' : slug === 'battleship' ? '🚢' : '🎲'}
-      </div>
-      {!isLocked && (
-        <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded-md uppercase tracking-wider">
-          {stats.wins} Vitórias
-        </span>
-      )}
-    </div>
-    <h3 className="font-bold text-lg text-slate-800">{title}</h3>
-    <p className="text-sm text-slate-500 mb-4">
-      {isLocked ? 'Em desenvolvimento...' : 'Top 10 disponível agora.'}
-    </p>
-    <button 
-      disabled={isLocked}
-      className={`w-full py-3 rounded-xl font-bold text-sm transition-colors ${
-        isLocked 
-        ? 'bg-slate-100 text-slate-400' 
-        : 'bg-slate-100 text-slate-700 group-hover:bg-indigo-600 group-hover:text-white'
-      }`}
-    >
-      {isLocked ? 'Em Breve' : 'Ver Ranking'}
-    </button>
-  </div>
-);
 
 export default GameGrid;
