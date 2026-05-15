@@ -24,74 +24,65 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-// Dentro do AuthProvider
-useEffect(() => {
-  const fetchUserData = async () => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      const parsedUser = JSON.parse(savedUser);
-      
-      // BUSCA CRUCIAL: Vai no banco buscar os pontos reais
-      try {
-        const response = await fetch(`/api/user-stats?email=${parsedUser.email}`);
-        const stats = await response.json();
-        
-        // Atualiza o estado com os pontos do banco (stats.total_points)
-        setUser({
-          ...parsedUser,
-          totalPoints: stats.total_points || 0
-        });
-      } catch (error) {
-        console.error("Erro ao sincronizar pontos:", error);
-        setUser(parsedUser);
-      }
-    }
-    setLoading(false);
-  };
-
-  fetchUserData();
-}, []);
+    useEffect(() => {
+        const fetchUserData = async () => {
+          const savedUser = localStorage.getItem('@GeGames:user');
+          if (savedUser) {
+            const parsedUser = JSON.parse(savedUser);
+            
+            try {
+              // Busca os pontos reais somados de todos os jogos
+              const response = await fetch(`/api/user-stats?email=${parsedUser.email}`);
+              const stats = await response.json();
+              
+              setUser({
+                ...parsedUser,
+                totalPoints: stats.total_points || 0 // Mapeia total_points para totalPoints
+              });
+            } catch (error) {
+              setUser(parsedUser);
+            }
+          }
+          setLoading(false);
+        };
+  
+        fetchUserData();
+      }, []);  
   
   // Login com o Google
-  
-const loginWithGoogle = async (credentialResponse: any) => {
+  const loginWithGoogle = async (credentialResponse: any) => {
     const decoded: any = jwtDecode(credentialResponse.credential);
     
-    const googleUser = {
-      id: decoded.sub,
-      name: decoded.name,
-      email: decoded.email,
-      avatar_url: decoded.picture,
-    };
-
     try {
-      // 1. Envia para o seu banco de dados via API
       const response = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(googleUser)
+        body: JSON.stringify({
+          id: decoded.sub,
+          name: decoded.name,
+          email: decoded.email,
+          avatar_url: decoded.picture,
+        })
       });
 
       const dbUser = await response.json();
 
-      // 2. Salva no estado o usuário que veio DO BANCO (com o ID real do Neon)
       const finalUser: User = {
-        id: dbUser.id, // Aqui usamos o UUID gerado pelo Neon
+        id: dbUser.id,
         name: dbUser.name,
         email: dbUser.email,
         avatar_url: dbUser.avatar_url,
-        totalPoints: dbUser.total_points || 0,
+        totalPoints: dbUser.total_points || 0, // Garante que inicia com o que está no banco
         isGuest: false
       };
 
       setUser(finalUser);
       localStorage.setItem('@GeGames:user', JSON.stringify(finalUser));
-      
     } catch (error) {
-      console.error("Erro ao registrar usuário no banco:", error);
+      console.error("Erro no login:", error);
     }
   };
-
+  
   // Login como Convidado
   const loginAsGuest = () => {
     const guestUser: User = {
