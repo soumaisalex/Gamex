@@ -5,7 +5,7 @@ type CellState = 'empty' | 'miss' | 'radar' | string;
 type Board = CellState[][];
 type Weapon = 'normal' | 'radar' | 'cross';
 
-const GRID_SIZE = 10;
+const GRID_SIZE = 8;
 const FLEET_SIZES = [5, 4, 3, 3, 2];
 
 const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
@@ -205,7 +205,7 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
         </div>
 
         {/* Tabuleiro Inimigo */}
-        <div className="grid grid-cols-10 gap-0.5 bg-slate-200 p-0.5 rounded-lg mb-6 shadow-inner aspect-square">
+        <div className="grid grid-cols-8 gap-0.5 bg-slate-200 p-0.5 rounded-lg mb-6 shadow-inner aspect-square">
           {enemyBoard.map((row, rIdx) => row.map((cell, cIdx) => (
             <button key={`e-${rIdx}-${cIdx}`} onClick={() => handleCellClick(rIdx, cIdx)}
               className={`aspect-square w-full rounded-sm flex items-center justify-center text-[10px] transition-all ${getCellColor(cell, true)}`}>
@@ -216,7 +216,7 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
 
         {/* Sua Frota */}
         <p className="text-[9px] font-black text-slate-400 uppercase mb-2 ml-1">Sua Frota (Defesa)</p>
-        <div className="grid grid-cols-10 gap-0.5 bg-slate-100 p-0.5 rounded-lg opacity-90 scale-[0.98]">
+        <div className="grid grid-cols-8 gap-0.5 bg-slate-100 p-0.5 rounded-lg opacity-90 scale-[0.98]">
           {playerBoard.map((row, rIdx) => row.map((cell, cIdx) => (
             <div key={`p-${rIdx}-${cIdx}`} className={`aspect-square w-full rounded-sm flex items-center justify-center text-[8px] ${getCellColor(cell, false)}`}>
               {cell.startsWith('ship') ? '🚢' : cell.startsWith('hit') ? '🔥' : ''}
