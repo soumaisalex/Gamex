@@ -36,21 +36,21 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
     return board;
   }
 
-  const handleCellClick = (row: number, col: number) => {
+  const handleCellClick = async (row: number, col: number) => {
     if (turn !== 'player' || gameOver || enemyBoard[row][col] === 'hit' || enemyBoard[row][col] === 'miss') return;
-
+  
     const newEnemyBoard = [...enemyBoard.map(r => [...r])];
-
+  
     if (selectedWeapon === 'normal') executeAttack(newEnemyBoard, row, col);
     else if (selectedWeapon === 'radar') executeRadar(newEnemyBoard, row, col);
     else if (selectedWeapon === 'cross') executeCrossShot(newEnemyBoard, row, col);
-
+  
     setEnemyBoard(newEnemyBoard);
-
+  
     if (checkVictory(newEnemyBoard)) {
       setGameOver(true);
-      setMessage('VITÓRIA NAVAL! +20 pontos.'); // Grid maior merece mais pontos
-      addPoints(20);
+      setMessage('VITÓRIA NAVAL! +20 pontos salvos.');
+      await saveVictory(); // AQUI: Chama a função que grava no Neon
     } else {
       setTurn('enemy');
       setMessage('Inimigo disparando...');
@@ -85,7 +85,27 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
     if (board[r][c] === 'hit' || board[r][c] === 'miss') return;
     board[r][c] = (board[r][c] === 'ship' || board[r][c] === 'radar') ? 'hit' : 'miss';
   };
-
+  
+  const saveVictory = async () => {
+    try {
+      // Chamada para a API que grava no Neon (mesma lógica do Jogo da Velha)
+      await fetch('/api/leaderboards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user?.email,
+          game_id: 2, // ID da Batalha Naval
+          points: 20  // Pontuação por vitória no grid 10x10
+        })
+      });
+      
+      // Atualiza o estado global para o Header refletir na hora
+      addPoints(20); 
+    } catch (error) {
+      console.error("Erro ao salvar pontos da Batalha Naval:", error);
+    }
+  };
+  
   const executeRadar = (board: Board, r: number, c: number) => {
     for (let i = r - 1; i <= r + 1; i++) {
       for (let j = c - 1; j <= c + 1; j++) {
