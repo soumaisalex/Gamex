@@ -2,6 +2,55 @@ import React, { useState, useEffect } from 'react';
 
 type Piece = [number, number];
 
+// --- COMPONENTE VISUAL PARA OS PONTINHOS (PIPS) ---
+const DominoHalf = ({ value }: { value: number }) => {
+  const renderDots = () => {
+    switch (value) {
+      case 1: return <div className="col-start-2 row-start-2 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />;
+      case 2: return <>
+        <div className="col-start-3 row-start-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+        <div className="col-start-1 row-start-3 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+      </>;
+      case 3: return <>
+        <div className="col-start-3 row-start-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+        <div className="col-start-2 row-start-2 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+        <div className="col-start-1 row-start-3 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+      </>;
+      case 4: return <>
+        <div className="col-start-1 row-start-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+        <div className="col-start-3 row-start-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+        <div className="col-start-1 row-start-3 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+        <div className="col-start-3 row-start-3 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+      </>;
+      case 5: return <>
+        <div className="col-start-1 row-start-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+        <div className="col-start-3 row-start-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+        <div className="col-start-2 row-start-2 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+        <div className="col-start-1 row-start-3 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+        <div className="col-start-3 row-start-3 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+      </>;
+      case 6: return <>
+        <div className="col-start-1 row-start-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+        <div className="col-start-1 row-start-2 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+        <div className="col-start-1 row-start-3 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+        <div className="col-start-3 row-start-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+        <div className="col-start-3 row-start-2 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+        <div className="col-start-3 row-start-3 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-slate-800 rounded-full" />
+      </>;
+      default: return null; // Zero
+    }
+  };
+
+  return (
+    <div className="flex-1 flex items-center justify-center p-1 w-full h-full">
+      <div className="grid grid-cols-3 grid-rows-3 w-full h-full max-w-[20px] max-h-[20px] sm:max-w-[24px] sm:max-h-[24px] items-center justify-items-center">
+         {renderDots()}
+      </div>
+    </div>
+  );
+};
+
+
 const DominoGame = ({ onBack }: { onBack: () => void }) => {
   const [playerHand, setPlayerHand] = useState<Piece[]>([]);
   const [botHand, setBotHand] = useState<Piece[]>([]);
@@ -10,7 +59,6 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
   const [turn, setTurn] = useState<'player' | 'bot'>('player');
   const [message, setMessage] = useState('Sua vez! Jogue qualquer pedra para começar.');
 
-  // Gera e embaralha as pedras
   useEffect(() => {
     startNewGame();
   }, []);
@@ -21,7 +69,6 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
       for (let j = i; j <= 6; j++) pieces.push([i, j]);
     }
     
-    // Embaralha
     for (let i = pieces.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
@@ -35,32 +82,28 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
     setMessage('Sua vez! Jogue qualquer pedra para começar.');
   };
 
-  // Lógica central para tentar encaixar uma pedra na mesa
   const tryPlayPiece = (piece: Piece, hand: Piece[], isPlayer: boolean): boolean => {
     const newTable = [...table];
     let played = false;
 
     if (newTable.length === 0) {
-      newTable.push(piece); // Primeira pedra da mesa
+      newTable.push(piece);
       played = true;
     } else {
       const leftEnd = newTable[0][0];
       const rightEnd = newTable[newTable.length - 1][1];
 
-      // Tenta encaixar na direita primeiro
       if (piece[0] === rightEnd) {
         newTable.push(piece);
         played = true;
       } else if (piece[1] === rightEnd) {
-        newTable.push([piece[1], piece[0]]); // Gira a pedra
+        newTable.push([piece[1], piece[0]]); 
         played = true;
-      } 
-      // Se não deu na direita, tenta na esquerda
-      else if (piece[1] === leftEnd) {
+      } else if (piece[1] === leftEnd) {
         newTable.unshift(piece);
         played = true;
       } else if (piece[0] === leftEnd) {
-        newTable.unshift([piece[1], piece[0]]); // Gira a pedra
+        newTable.unshift([piece[1], piece[0]]); 
         played = true;
       }
     }
@@ -78,20 +121,15 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
       }
       return true;
     }
-    return false; // Movimento inválido
+    return false;
   };
 
-  // Clique do Jogador
   const handlePlayerPlay = (piece: Piece) => {
     if (turn !== 'player') return;
-    
     const success = tryPlayPiece(piece, playerHand, true);
-    if (!success) {
-      setMessage('Pedra inválida! Não encaixa nas pontas.');
-    }
+    if (!success) setMessage('Pedra inválida! Não encaixa nas pontas.');
   };
 
-  // Comprar do monte
   const drawPiece = (isPlayer: boolean) => {
     if (boneyard.length === 0) {
       setMessage(isPlayer ? 'O monte está vazio! Você passou a vez.' : 'Bot passou a vez.');
@@ -103,25 +141,20 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
     const drawnPiece = newBoneyard.pop()!;
     setBoneyard(newBoneyard);
 
-    if (isPlayer) {
-      setPlayerHand([...playerHand, drawnPiece]);
-    } else {
-      setBotHand([...botHand, drawnPiece]);
-    }
+    if (isPlayer) setPlayerHand([...playerHand, drawnPiece]);
+    else setBotHand([...botHand, drawnPiece]);
     
     return drawnPiece;
   };
 
-  // Lógica do Bot (IA Básica)
   useEffect(() => {
     if (turn === 'bot') {
       const playBot = async () => {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Delay para parecer humano
+        await new Promise(resolve => setTimeout(resolve, 1200));
 
         let currentHand = [...botHand];
         let played = false;
 
-        // Tenta jogar alguma da mão
         for (const piece of currentHand) {
           if (tryPlayPiece(piece, currentHand, false)) {
             played = true;
@@ -129,13 +162,10 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
           }
         }
 
-        // Se não conseguiu jogar, tem que comprar até achar ou o monte acabar
         if (!played) {
           setMessage('Adversário está comprando...');
           let pieceDrawn = drawPiece(false);
           
-          // Num jogo real, ele compraria até achar. Aqui vamos simplificar por enquanto:
-          // Ele compra uma. Se não der, passa. (Podemos melhorar essa IA depois).
           if (pieceDrawn) {
             await new Promise(resolve => setTimeout(resolve, 800));
             if (!tryPlayPiece(pieceDrawn, [...currentHand, pieceDrawn], false)) {
@@ -151,7 +181,7 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
 
 
   return (
-    <div className="flex flex-col items-center pb-20 animate-in fade-in duration-500 max-w-2xl mx-auto w-full">
+    <div className="flex flex-col items-center pb-20 animate-in fade-in duration-500 max-w-3xl mx-auto w-full">
       <div className="w-full bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-200 min-h-[600px] flex flex-col">
         
         {/* Header */}
@@ -179,41 +209,37 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
           </div>
         </div>
 
-        {/* Mesa de Jogo */}
-        <div className="flex-1 bg-emerald-700 rounded-2xl shadow-inner border-4 border-slate-800 flex items-center p-6 mb-6 overflow-x-auto custom-scrollbar">
+        {/* MESA DE JOGO - Agora com Flex-Wrap */}
+        <div className="flex-1 bg-emerald-700 rounded-2xl shadow-inner border-4 border-slate-800 flex items-center justify-center p-4 sm:p-6 mb-6">
           {table.length === 0 ? (
-            <div className="w-full text-center text-emerald-300/50 font-black uppercase tracking-widest">
+            <div className="text-emerald-300/50 font-black uppercase tracking-widest">
               A mesa está vazia
             </div>
           ) : (
-            <div className="flex items-center gap-1 min-w-max mx-auto">
+            <div className="flex flex-wrap justify-center gap-1 sm:gap-2">
               {table.map((piece, idx) => (
-                <div key={idx} className="flex bg-amber-50 rounded shadow-sm border border-slate-800 h-10 w-20 divide-x-2 divide-slate-300">
-                  <div className="flex-1 flex items-center justify-center font-black text-slate-800">{piece[0]}</div>
-                  <div className="flex-1 flex items-center justify-center font-black text-slate-800">{piece[1]}</div>
+                <div key={idx} className="flex bg-amber-50 rounded shadow-md border border-slate-800 h-10 w-20 sm:h-12 sm:w-24 divide-x-2 divide-slate-300 transform transition-all duration-300 hover:scale-105">
+                  <DominoHalf value={piece[0]} />
+                  <DominoHalf value={piece[1]} />
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Sua Mão */}
+        {/* Sua Mão (Vertical) */}
         <div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 text-center">Suas Pedras</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1 text-center">Suas Pedras</p>
           <div className="flex flex-wrap justify-center gap-2">
             {playerHand.map((piece, idx) => (
               <button 
                 key={idx}
                 onClick={() => handlePlayerPlay(piece)}
                 disabled={turn !== 'player'}
-                className="flex flex-col items-center justify-between w-10 h-20 bg-amber-50 rounded-lg border-2 border-slate-300 shadow-sm hover:-translate-y-2 hover:border-indigo-400 transition-all duration-300 disabled:hover:translate-y-0 disabled:opacity-80"
+                className="flex flex-col items-center w-10 h-20 sm:w-12 sm:h-24 bg-amber-50 rounded-lg border-2 border-slate-300 shadow-sm hover:-translate-y-2 hover:border-indigo-400 transition-all duration-300 disabled:hover:translate-y-0 disabled:opacity-80 divide-y-2 divide-slate-300"
               >
-                <div className="flex-1 w-full flex items-center justify-center font-black text-slate-800 text-lg border-b-2 border-slate-300">
-                  {piece[0]}
-                </div>
-                <div className="flex-1 w-full flex items-center justify-center font-black text-slate-800 text-lg">
-                  {piece[1]}
-                </div>
+                <DominoHalf value={piece[0]} />
+                <DominoHalf value={piece[1]} />
               </button>
             ))}
           </div>
