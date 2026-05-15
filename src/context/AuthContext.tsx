@@ -24,30 +24,36 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-    useEffect(() => {
-        const fetchUserData = async () => {
-          const savedUser = localStorage.getItem('@GeGames:user');
-          if (savedUser) {
-            const parsedUser = JSON.parse(savedUser);
-            
-            try {
-              // Busca os pontos reais somados de todos os jogos
-              const response = await fetch(`/api/user-stats?email=${parsedUser.email}`);
-              const stats = await response.json();
-              
-              setUser({
-                ...parsedUser,
-                totalPoints: stats.total_points || 0 // Mapeia total_points para totalPoints
-              });
-            } catch (error) {
-              setUser(parsedUser);
-            }
-          }
-          setLoading(false);
-        };
+   useEffect(() => {
+    const fetchUserData = async () => {
+      const savedUser = localStorage.getItem('@GeGames:user');
+      
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        
+        try {
+          // Busca a pontuação REAL e ATUALIZADA no banco de dados
+          const response = await fetch(`/api/user-stats?email=${parsedUser.email}`);
+          const stats = await response.json();
+          
+          const updatedUser = {
+            ...parsedUser,
+            totalPoints: stats.total_points || 0
+          };
   
-        fetchUserData();
-      }, []);  
+          // Atualiza o estado e também o localStorage para a próxima atualização
+          setUser(updatedUser);
+          localStorage.setItem('@GeGames:user', JSON.stringify(updatedUser));
+        } catch (error) {
+          console.error("Erro ao sincronizar pontos:", error);
+          setUser(parsedUser);
+        }
+      }
+      setLoading(false);
+    };
+  
+    fetchUserData();
+  }, []);
   
   // Login com o Google
   const loginWithGoogle = async (credentialResponse: any) => {
