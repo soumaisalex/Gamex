@@ -25,7 +25,7 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
   function generateRandomBoard() {
     const board = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill('empty'));
     let ships = 0;
-    while (ships < 12) { // Aumentei para 12 navios já que o grid é maior
+    while (ships < 20) { // Aumentei para 12 navios já que o grid é maior
       const r = Math.floor(Math.random() * GRID_SIZE);
       const c = Math.floor(Math.random() * GRID_SIZE);
       if (board[r][c] === 'empty') {
@@ -141,8 +141,21 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
         {/* Armas */}
         <div className={`flex gap-2 mb-4 px-2 ${turn === 'player' ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
           <WeaponBtn icon="🎯" label="Normal" active={selectedWeapon === 'normal'} onClick={() => setSelectedWeapon('normal')} />
-          <WeaponBtn icon="📡" label="Radar" cost={50} active={selectedWeapon === 'radar'} locked={user?.totalPoints! < 50} onClick={() => setSelectedWeapon('radar')} />
-          <WeaponBtn icon="➕" label="Cruz" cost={150} active={selectedWeapon === 'cross'} locked={user?.totalPoints! < 150} onClick={() => setSelectedWeapon('cross')} />
+          /*<WeaponBtn icon="📡" label="Radar" cost={10} active={selectedWeapon === 'radar'} locked={user?.totalPoints! < 10} onClick={() => setSelectedWeapon('radar')} />*/
+          /*<WeaponBtn icon="➕" label="Cruz" cost={20} active={selectedWeapon === 'cross'} locked={user?.totalPoints! < 20} onClick={() => setSelectedWeapon('cross')} />*/
+          <WeaponBtn 
+            icon="📡" label="Radar" cost={10} 
+            active={selectedWeapon === 'radar'} 
+            locked={false} // Mude temporariamente de user?.totalPoints! < 50 para false
+            onClick={() => setSelectedWeapon('radar')} 
+          />
+          
+          <WeaponBtn 
+            icon="➕" label="Cruz" cost={20} 
+            active={selectedWeapon === 'cross'} 
+            locked={false} // Mude temporariamente para false
+            onClick={() => setSelectedWeapon('cross')} 
+          />
         </div>
 
         {/* TABULEIRO ATAQUE (10x10) */}
