@@ -4,6 +4,7 @@ import GameGrid from '../components/GameGrid';
 import RankingModal from '../components/RankingModal';
 import TicTacToeGame from '../features/TicTacToe/TicTacToeGame';
 import BattleshipGame from '../features/Battleship/BattleshipGame';
+import DominoGame from '../features/Domino/DominoGame';
 import { useAuth } from '../context/AuthContext';
 
 const Lobby = () => {
@@ -71,6 +72,7 @@ const Lobby = () => {
           <div className="pt-4 animate-in zoom-in-95 duration-300">
             {activeGameId === 1 && <TicTacToeGame onBack={() => setActiveGameId(null)} />}
             {activeGameId === 2 && <BattleshipGame onBack={() => setActiveGameId(null)} />}
+            {activeGameId === 3 && <DominoGame onBack={() => setActiveGameId(null)} />}
           </div>
         )
       )}
