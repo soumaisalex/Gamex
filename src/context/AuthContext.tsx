@@ -24,13 +24,34 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const savedUser = localStorage.getItem('@GeGames:user');
-    if (savedUser) setUser(JSON.parse(savedUser));
+// Dentro do AuthProvider
+useEffect(() => {
+  const fetchUserData = async () => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      const parsedUser = JSON.parse(savedUser);
+      
+      // BUSCA CRUCIAL: Vai no banco buscar os pontos reais
+      try {
+        const response = await fetch(`/api/user-stats?email=${parsedUser.email}`);
+        const stats = await response.json();
+        
+        // Atualiza o estado com os pontos do banco (stats.total_points)
+        setUser({
+          ...parsedUser,
+          totalPoints: stats.total_points || 0
+        });
+      } catch (error) {
+        console.error("Erro ao sincronizar pontos:", error);
+        setUser(parsedUser);
+      }
+    }
     setLoading(false);
-  }, []);
+  };
 
+  fetchUserData();
+}, []);
+  
   // Login com o Google
   
 const loginWithGoogle = async (credentialResponse: any) => {
