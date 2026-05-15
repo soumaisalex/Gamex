@@ -1,130 +1,102 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
-// Tipagem básica
-type CellState = 'empty' | 'ship' | 'hit' | 'miss' | 'radar';
+type CellState = 'empty' | 'miss' | 'radar' | string; 
 type Board = CellState[][];
 type Weapon = 'normal' | 'radar' | 'cross';
 
 const GRID_SIZE = 10;
-
-// Definição da Frota Solicitada (Tamanhos dos navios)
 const FLEET_SIZES = [5, 4, 3, 3, 2];
 
 const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
   const { user, addPoints } = useAuth();
   
-  // Estados do Jogo
   const [enemyBoard, setEnemyBoard] = useState<Board>([]);
   const [playerBoard, setPlayerBoard] = useState<Board>([]);
   const [selectedWeapon, setSelectedWeapon] = useState<Weapon>('normal');
   const [turn, setTurn] = useState<'player' | 'enemy'>('player');
   const [gameOver, setGameOver] = useState(false);
-  const [message, setMessage] = useState('Capitão, posicione a frota para o combate!');
+  const [message, setMessage] = useState('Capitão, a frota aguarda suas ordens!');
 
-  // Inicializa os tabuleiros
   useEffect(() => {
-    setEnemyBoard(generateRandomBoardWithFleet()); // Gera frota inimiga
-    setPlayerBoard(generateRandomBoardWithFleet()); // Gera sua frota
+    setEnemyBoard(generateRandomBoardWithFleet());
+    setPlayerBoard(generateRandomBoardWithFleet());
   }, []);
 
-  // --- NOVA LÓGICA DE GERAÇÃO DE TABULEIRO COM FROTA MISTA ---
   function generateRandomBoardWithFleet(): Board {
     let board: Board;
     let allPlaced = false;
 
-    // Loop principal: Tenta gerar o tabuleiro inteiro até conseguir colocar todos os navios
     while (!allPlaced) {
       board = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill('empty'));
       allPlaced = true;
 
-      // Função auxiliar local para tentar colocar um navio específico
-      function attemptPlaceShip(boardToCheck: Board, size: number): boolean {
-        // Tenta N vezes encontrar uma posição válida para este navio
+      const attemptPlaceShip = (boardToCheck: Board, size: number, shipId: string) => {
         for (let attempt = 0; attempt < 100; attempt++) {
-          const isHorizontal = Math.random() < 0.5; // Orientação aleatória
+          const isHorizontal = Math.random() < 0.5;
           const r = Math.floor(Math.random() * GRID_SIZE);
           const c = Math.floor(Math.random() * GRID_SIZE);
 
           let canPlace = true;
           if (isHorizontal) {
-            // Verifica limites horizontais
-            if (c + size > GRID_SIZE) {
-              canPlace = false;
-            } else {
-              // Verifica sobreposição horizontal
+            if (c + size > GRID_SIZE) canPlace = false;
+            else {
               for (let i = 0; i < size; i++) {
-                if (boardToCheck[r][c + i] !== 'empty') {
-                  canPlace = false;
-                  break;
-                }
+                if (boardToCheck[r][c + i] !== 'empty') { canPlace = false; break; }
               }
             }
           } else {
-            // Verifica limites verticais
-            if (r + size > GRID_SIZE) {
-              canPlace = false;
-            } else {
-              // Verifica sobreposição vertical
+            if (r + size > GRID_SIZE) canPlace = false;
+            else {
               for (let i = 0; i < size; i++) {
-                if (boardToCheck[r + i][c] !== 'empty') {
-                  canPlace = false;
-                  break;
-                }
+                if (boardToCheck[r + i][c] !== 'empty') { canPlace = false; break; }
               }
             }
           }
 
-          // Se a posição for válida, coloca o navio e retorna sucesso
           if (canPlace) {
-            if (isHorizontal) {
-              for (let i = 0; i < size; i++) {
-                boardToCheck[r][c + i] = 'ship';
-              }
-            } else {
-              for (let i = 0; i < size; i++) {
-                boardToCheck[r + i][c] = 'ship';
-              }
+            for (let i = 0; i < size; i++) {
+              if (isHorizontal) boardToCheck[r][c + i] = `ship-${size}-${shipId}`;
+              else boardToCheck[r + i][c] = `ship-${size}-${shipId}`;
             }
-            return true; 
+            return true;
           }
         }
-        return false; // Falhou em colocar este navio após N tentativas
-      }
+        return false;
+      };
 
-      // Tentar colocar cada navio da frota oficial
-      for (const size of FLEET_SIZES) {
-        if (!attemptPlaceShip(board, size)) {
-          allPlaced = false; // Falhou em colocar um navio, reinicia o tabuleiro inteiro
-          break; 
+      for (let i = 0; i < FLEET_SIZES.length; i++) {
+        if (!attemptPlaceShip(board, FLEET_SIZES[i], i.toString())) {
+          allPlaced = false;
+          break;
         }
       }
     }
-
-    return board!; // Garante o retorno de um tabuleiro válido
+    return board!;
   }
-
-  // --- RESTO DO CÓDIGO PERMANECE IGUAL ---
 
   const saveVictory = async () => {
     try {
-      await fetch('/api/leaderboards', {
+      const response = await fetch('/api/leaderboards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: user?.email,
-          game_id: 2, // ID da Batalha Naval no seu banco
-          points: 20  // Pontuação por vitória no grid 10x10 com frota
+          game_id: 2, 
+          points: 20
         })
       });
-      addPoints(20);
+
+      if (response.ok) {
+        addPoints(20); // Atualiza o estado global e localStorage
+      }
     } catch (error) {
-      console.error("Erro ao sincronizar vitória:", error);
+      console.error("Erro ao salvar vitória:", error);
     }
   };
 
   const handleCellClick = async (row: number, col: number) => {
-    if (turn !== 'player' || gameOver || enemyBoard[row][col] === 'hit' || enemyBoard[row][col] === 'miss') return;
+    if (turn !== 'player' || gameOver || enemyBoard[row][col].startsWith('hit') || enemyBoard[row][col] === 'miss') return;
 
     const newEnemyBoard = [...enemyBoard.map(r => [...r])];
 
@@ -136,12 +108,11 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
 
     if (checkVictory(newEnemyBoard)) {
       setGameOver(true);
-      setMessage('VITÓRIA NAVAL! +20 pontos salvos no banco.');
+      setMessage('VITÓRIA! Relatório enviado ao comando.');
       await saveVictory();
     } else {
       setTurn('enemy');
-      setMessage('Inimigo calculando trajetória...');
-      setTimeout(enemyTurn, 1000);
+      setTimeout(enemyTurn, 800);
     }
   };
 
@@ -152,129 +123,88 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
     do {
       r = Math.floor(Math.random() * GRID_SIZE);
       c = Math.floor(Math.random() * GRID_SIZE);
-    } while (newPlayerBoard[r][c] === 'hit' || newPlayerBoard[r][c] === 'miss');
+    } while (newPlayerBoard[r][c].startsWith('hit') || newPlayerBoard[r][c] === 'miss');
 
-    const isHit = newPlayerBoard[r][c] === 'ship';
-    newPlayerBoard[r][c] = isHit ? 'hit' : 'miss';
+    const cell = newPlayerBoard[r][c];
+    if (cell.startsWith('ship') || cell === 'radar') {
+      newPlayerBoard[r][c] = cell.replace('ship', 'hit').replace('radar', 'hit');
+      setMessage('Fomos atingidos!');
+    } else {
+      newPlayerBoard[r][c] = 'miss';
+      setMessage('O inimigo errou.');
+    }
+    
     setPlayerBoard(newPlayerBoard);
 
     if (checkVictory(newPlayerBoard)) {
       setGameOver(true);
-      setMessage('FROTA DESTRUÍDA! O inimigo venceu a batalha.');
+      setMessage('Derrota. A frota foi afundada.');
     } else {
       setTurn('player');
-      setMessage(isHit ? 'ALERTA! Fomos atingidos!' : 'O inimigo errou o disparo.');
       setSelectedWeapon('normal');
     }
   };
 
   const executeAttack = (board: Board, r: number, c: number) => {
-    if (board[r][c] === 'hit' || board[r][c] === 'miss') return;
-    board[r][c] = (board[r][c] === 'ship' || board[r][c] === 'radar') ? 'hit' : 'miss';
+    const cell = board[r][c];
+    if (cell.startsWith('hit') || cell === 'miss') return;
+    board[r][c] = (cell.startsWith('ship') || cell === 'radar') ? cell.replace('ship', 'hit').replace('radar', 'hit') : 'miss';
   };
 
   const executeRadar = (board: Board, r: number, c: number) => {
     for (let i = r - 1; i <= r + 1; i++) {
       for (let j = c - 1; j <= c + 1; j++) {
-        if (i >= 0 && i < GRID_SIZE && j >= 0 && j < GRID_SIZE && board[i][j] === 'ship') {
+        if (i >= 0 && i < GRID_SIZE && j >= 0 && j < GRID_SIZE && board[i][j].startsWith('ship')) {
           board[i][j] = 'radar';
         }
       }
     }
-    setMessage('Radar ativado! Verifique os sinais detectados.');
   };
 
   const executeCrossShot = (board: Board, r: number, c: number) => {
-    const pattern = [[r,c],[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
-    pattern.forEach(([i,j]) => {
+    [[r,c],[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([i,j]) => {
       if (i >= 0 && i < GRID_SIZE && j >= 0 && j < GRID_SIZE) executeAttack(board, i, j);
     });
-    setMessage('Disparo em Cruz realizado!');
   };
 
-  const checkVictory = (board: Board) => !board.flat().includes('ship') && !board.flat().includes('radar');
+  const checkVictory = (board: Board) => !board.flat().some(cell => cell.startsWith('ship') || cell === 'radar');
+
+  const getCellColor = (cell: string, isEnemy: boolean) => {
+    if (cell === 'miss') return 'bg-slate-800';
+    if (cell === 'radar') return 'bg-indigo-500 animate-pulse';
+    if (cell.startsWith('hit')) {
+      if (cell.includes('ship-5') || cell.includes('hit-5')) return 'bg-purple-600';
+      if (cell.includes('ship-4') || cell.includes('hit-4')) return 'bg-emerald-600';
+      if (cell.includes('ship-3') || cell.includes('hit-3')) return 'bg-amber-500';
+      if (cell.includes('ship-2') || cell.includes('hit-2')) return 'bg-orange-600';
+      return 'bg-rose-500';
+    }
+    if (!isEnemy && cell.startsWith('ship')) return 'bg-emerald-400 shadow-inner';
+    return isEnemy ? 'bg-sky-500 hover:bg-sky-400' : 'bg-white';
+  };
 
   return (
     <div className="flex flex-col items-center pb-20 animate-in fade-in duration-500 max-w-md mx-auto">
       <div className="w-full bg-white p-4 rounded-3xl shadow-sm border border-slate-200">
         
         <div className="flex justify-between items-center mb-4 px-2">
-          <button onClick={onBack} className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">← Abandone o combate</button>
+          <button onClick={onBack} className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">← Voltar</button>
           <div className={`px-3 py-1 rounded-full text-[9px] font-black tracking-widest ${turn === 'player' ? 'bg-indigo-600 text-white' : 'bg-rose-600 text-white'}`}>
             {turn === 'player' ? 'SUA VEZ' : 'INIMIGO'}
           </div>
         </div>
 
         <div className="bg-slate-50 p-2 rounded-xl mb-4 text-center border border-slate-100">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{message}</p>
+          <p className="text-[10px] font-bold text-slate-500 uppercase italic tracking-tight">{message}</p>
         </div>
 
-        {/* Arsenal */}
         <div className={`flex gap-2 mb-4 px-1 ${turn === 'player' ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
           <WeaponBtn icon="🎯" label="Normal" active={selectedWeapon === 'normal'} onClick={() => setSelectedWeapon('normal')} />
-          <WeaponBtn 
-            icon="📡" label="Radar" cost={50} 
-            active={selectedWeapon === 'radar'} 
-            locked={(user?.totalPoints || 0) < 50} 
-            onClick={() => setSelectedWeapon('radar')} 
-          />
-          <WeaponBtn 
-            icon="➕" label="Cruz" cost={150} 
-            active={selectedWeapon === 'cross'} 
-            locked={(user?.totalPoints || 0) < 150} 
-            onClick={() => setSelectedWeapon('cross')} 
-          />
+          <WeaponBtn icon="📡" label="Radar" cost={50} active={selectedWeapon === 'radar'} locked={(user?.totalPoints || 0) < 50} onClick={() => setSelectedWeapon('radar')} />
+          <WeaponBtn icon="➕" label="Cruz" cost={150} active={selectedWeapon === 'cross'} locked={(user?.totalPoints || 0) < 150} onClick={() => setSelectedWeapon('cross')} />
         </div>
 
         {/* Tabuleiro Inimigo */}
         <div className="grid grid-cols-10 gap-0.5 bg-slate-200 p-0.5 rounded-lg mb-6 shadow-inner aspect-square">
           {enemyBoard.map((row, rIdx) => row.map((cell, cIdx) => (
-            <button key={`e-${rIdx}-${cIdx}`} onClick={() => handleCellClick(rIdx, cIdx)}
-              className={`aspect-square w-full rounded-sm flex items-center justify-center text-[10px] transition-all
-              ${cell === 'empty' || cell === 'ship' ? 'bg-sky-500 hover:bg-sky-400' : ''}
-              ${cell === 'radar' ? 'bg-indigo-500 animate-pulse' : ''}
-              ${cell === 'hit' ? 'bg-rose-500' : ''}
-              ${cell === 'miss' ? 'bg-slate-800' : ''}`}>
-              {cell === 'hit' ? '💥' : cell === 'miss' ? '💧' : cell === 'radar' ? '📡' : ''}
-            </button>
-          )))}
-        </div>
-
-        {/* Sua Frota */}
-        <p className="text-[9px] font-black text-slate-400 uppercase mb-2 ml-1">Status da sua Frota</p>
-        <div className="grid grid-cols-10 gap-0.5 bg-slate-100 p-0.5 rounded-lg opacity-90 scale-[0.98]">
-          {playerBoard.map((row, rIdx) => row.map((cell, cIdx) => (
-            <div key={`p-${rIdx}-${cIdx}`} className={`aspect-square w-full rounded-sm flex items-center justify-center text-[8px]
-              ${cell === 'ship' ? 'bg-emerald-400 shadow-inner' : 'bg-white'}
-              ${cell === 'hit' ? 'bg-rose-500' : ''}
-              ${cell === 'miss' ? 'bg-slate-200' : ''}`}>
-              {cell === 'ship' ? '🚢' : cell === 'hit' ? '🔥' : ''}
-            </div>
-          )))}
-        </div>
-
-        {gameOver && (
-          <button onClick={() => window.location.reload()} className="w-full mt-4 py-3 bg-indigo-600 text-white font-black rounded-xl text-xs tracking-widest shadow-lg hover:bg-indigo-700 active:scale-95 transition-all">
-            SOLICITAR REFORÇOS (REJOGAR)
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const WeaponBtn = ({ icon, label, cost, active, locked, onClick }: any) => (
-  <button 
-    onClick={onClick} 
-    disabled={locked} 
-    className={`flex-1 py-2 rounded-xl border-2 flex flex-col items-center transition-all 
-    ${active ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-slate-50 bg-white opacity-80'} 
-    ${locked ? 'grayscale cursor-not-allowed border-dashed opacity-40' : 'hover:border-indigo-100'}`}
-  >
-    <span className="text-base">{icon}</span>
-    <span className="text-[7px] font-black uppercase tracking-tighter">{label}</span>
-    {cost && <span className="text-[7px] text-indigo-600 font-bold">{cost}p</span>}
-  </button>
-);
-
-export default BattleshipGame;
+            <button key={`e-${r
