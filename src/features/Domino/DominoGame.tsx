@@ -44,7 +44,7 @@ const DominoHalf = ({ value }: { value: number }) => {
 
   return (
     <div className="flex-1 flex items-center justify-center p-1 w-full h-full">
-      <div className="grid grid-cols-3 grid-rows-3 w-full h-full max-w-[24px] max-h-[24px] items-center justify-items-center">
+      <div className="grid grid-cols-3 grid-rows-3 w-full h-full max-w-[24px] max-h-[24px] sm:max-w-[28px] sm:max-h-[28px] items-center justify-items-center">
          {renderDots()}
       </div>
     </div>
@@ -60,9 +60,8 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
   const [table, setTable] = useState<Piece[]>([]);
   const [turn, setTurn] = useState<'player' | 'bot'>('player');
   const [gameOver, setGameOver] = useState(false);
-  const [message, setMessage] = useState('Sua vez! Jogue qualquer pedra para começar.');
+  const [message, setMessage] = useState('Sua vez de jogar!');
 
-  // Inicia o Jogo
   useEffect(() => {
     startNewGame();
   }, []);
@@ -96,7 +95,6 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
     } catch (e) { console.error(e); }
   };
 
-  // Avalia fim de jogo
   const checkEndGame = (newPlayerHand: Piece[], newBotHand: Piece[], currentTable: Piece[], currentBoneyard: Piece[]) => {
     if (newPlayerHand.length === 0) {
       setGameOver(true);
@@ -120,7 +118,7 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
         const playerPoints = newPlayerHand.reduce((acc, p) => acc + p[0] + p[1], 0);
         const botPoints = newBotHand.reduce((acc, p) => acc + p[0] + p[1], 0);
         setGameOver(true);
-        if (playerPoints <= botPoints) { // Em caso de empate de pontos, jogador vence
+        if (playerPoints <= botPoints) {
           setMessage(`Jogo trancado! Você venceu nos pontos (${playerPoints} vs ${botPoints}).`);
           saveVictory();
         } else {
@@ -132,7 +130,6 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
     return false;
   };
 
-  // Motor puro: Verifica se encaixa
   const canPlayPiece = (piece: Piece, currentTable: Piece[]) => {
     if (currentTable.length === 0) return true;
     const leftEnd = currentTable[0][0];
@@ -140,7 +137,6 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
     return piece[0] === leftEnd || piece[1] === leftEnd || piece[0] === rightEnd || piece[1] === rightEnd;
   };
 
-  // Motor puro: Executa a jogada
   const executePlay = (piece: Piece, playerType: 'player' | 'bot') => {
     const newTable = [...table];
     
@@ -151,9 +147,9 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
       const rightEnd = newTable[newTable.length - 1][1];
       
       if (piece[0] === rightEnd) newTable.push(piece);
-      else if (piece[1] === rightEnd) newTable.push([piece[1], piece[0]]); // Gira
+      else if (piece[1] === rightEnd) newTable.push([piece[1], piece[0]]); 
       else if (piece[1] === leftEnd) newTable.unshift(piece);
-      else if (piece[0] === leftEnd) newTable.unshift([piece[1], piece[0]]); // Gira
+      else if (piece[0] === leftEnd) newTable.unshift([piece[1], piece[0]]); 
     }
 
     const nextPlayerHand = playerType === 'player' ? playerHand.filter(p => p !== piece) : playerHand;
@@ -174,7 +170,6 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
     }
   };
 
-  // Comprar peça pura
   const executeDraw = (playerType: 'player' | 'bot') => {
     if (boneyard.length === 0) return;
     const newBoneyard = [...boneyard];
@@ -185,7 +180,6 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
     else setBotHand([...botHand, drawn]);
   };
 
-  // Quando você clica na pedra
   const handlePlayerPlay = (piece: Piece) => {
     if (turn !== 'player' || gameOver) return;
     
@@ -196,14 +190,11 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
     }
   };
 
-  // IA do Bot Refatorada (Sem conflito de estados)
   useEffect(() => {
     if (turn !== 'bot' || gameOver) return;
 
     const timer = setTimeout(() => {
       let pieceToPlay = null;
-      
-      // Procura uma peça válida
       for (const p of botHand) {
         if (canPlayPiece(p, table)) {
           pieceToPlay = p;
@@ -215,9 +206,8 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
         executePlay(pieceToPlay, 'bot');
       } else {
         if (boneyard.length > 0) {
-          setMessage('Adversário comprou uma peça...');
+          setMessage('Adversário comprando...');
           executeDraw('bot');
-          // O turno continua sendo do bot. O React vai re-renderizar e este useEffect vai rodar de novo!
         } else {
           setMessage('Adversário não tem peças e passou a vez.');
           setTurn('player');
@@ -225,31 +215,16 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
       }
     }, 1200);
 
-    return () => clearTimeout(timer); // Limpa caso a tela mude, evitando bugs
+    return () => clearTimeout(timer);
   }, [turn, gameOver, botHand, table, boneyard]); 
 
-  // Auto-passar turno do jogador se não houver jogadas
-  useEffect(() => {
-    if (turn === 'player' && !gameOver && table.length > 0) {
-      const hasValidMove = playerHand.some(p => canPlayPiece(p, table));
-      if (!hasValidMove && boneyard.length === 0) {
-        const timer = setTimeout(() => {
-          setMessage('Você não tem pedras válidas e o monte acabou. Passando a vez...');
-          setTurn('bot');
-        }, 2000);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [turn, gameOver, playerHand, table, boneyard]);
-
-
   return (
-    <div className="flex flex-col items-center pb-20 max-w-4xl mx-auto w-full px-2">
+    <div className="flex flex-col items-center pb-20 max-w-5xl mx-auto w-full px-2">
       <div className="w-full bg-white p-4 md:p-8 rounded-[40px] shadow-sm border border-slate-100 min-h-[650px] flex flex-col">
         
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <button onClick={onBack} className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] active:scale-95">← Sair</button>
+          <button onClick={onBack} className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em]">← Sair</button>
           <div className="px-5 py-2 rounded-full text-[10px] font-black tracking-widest bg-indigo-600 text-white shadow-indigo-100 shadow-lg">DOMINÓ</div>
         </div>
 
@@ -266,30 +241,37 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
           <button 
             onClick={() => executeDraw('player')} 
             disabled={turn !== 'player' || boneyard.length === 0 || gameOver}
-            className="bg-white border-2 border-slate-200 hover:border-indigo-500 hover:text-indigo-600 px-4 py-2 rounded-2xl text-[10px] font-black uppercase transition-all active:scale-95 disabled:opacity-30 disabled:hover:border-slate-200 disabled:hover:text-slate-400">
+            className="bg-white border-2 border-slate-200 hover:border-indigo-500 hover:text-indigo-600 px-4 py-2 rounded-2xl text-[10px] font-black uppercase transition-all disabled:opacity-30">
             Comprar ({boneyard.length})
           </button>
         </div>
 
-        {/* Mesa */}
-        <div className="flex-1 bg-emerald-800 rounded-[32px] shadow-inner border-[6px] border-emerald-900 flex items-center justify-center p-6 sm:p-8 mb-8 relative overflow-hidden">
+        {/* MESA DE JOGO - Atualizada para Duplos Clássicos */}
+        <div className="flex-1 bg-emerald-800 rounded-[32px] shadow-inner border-[6px] border-emerald-900 flex items-center justify-center p-6 sm:p-10 mb-8 overflow-y-auto custom-scrollbar">
           {table.length === 0 ? (
             <div className="text-emerald-400/30 font-black uppercase tracking-[0.3em] text-sm animate-pulse text-center">
               A mesa está vazia.<br/>Jogue a primeira pedra!
             </div>
           ) : (
             <div className="flex flex-wrap justify-center items-center gap-2 max-w-full">
-              {table.map((p, i) => (
-                <div key={i} className="flex bg-white rounded-lg shadow-xl border-b-4 border-slate-200 h-12 w-24 sm:h-14 sm:w-28 divide-x-2 divide-slate-100 transform transition-all duration-300">
-                  <DominoHalf value={p[0]} />
-                  <DominoHalf value={p[1]} />
-                </div>
-              ))}
+              {table.map((piece, idx) => {
+                const isDouble = piece[0] === piece[1];
+                return (
+                  <div 
+                    key={idx} 
+                    className={`flex rounded-lg shadow-xl border border-slate-800 bg-amber-50 divide-slate-300 transform transition-all duration-300 hover:scale-105 
+                      ${isDouble ? 'flex-col h-20 w-10 sm:h-24 sm:w-12 divide-y-2' : 'flex-row h-10 w-20 sm:h-12 sm:w-24 divide-x-2'}`}
+                  >
+                    <DominoHalf value={piece[0]} />
+                    <DominoHalf value={piece[1]} />
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* Sua Mão */}
+        {/* Sua Mão (Sempre Vertical) */}
         <div className="relative">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 text-center">Sua Mão</p>
           <div className="flex flex-wrap justify-center gap-3">
@@ -298,7 +280,7 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
                 key={i} 
                 onClick={() => handlePlayerPlay(p)} 
                 disabled={turn !== 'player' || gameOver}
-                className="flex flex-col items-center w-12 h-24 sm:w-14 sm:h-28 bg-white rounded-xl border-2 border-slate-200 shadow-sm hover:-translate-y-3 hover:border-indigo-400 hover:shadow-indigo-100 hover:shadow-2xl transition-all duration-200 disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-sm divide-y-2 divide-slate-100 cursor-pointer"
+                className="flex flex-col items-center w-12 h-24 sm:w-14 sm:h-28 bg-white rounded-xl border-2 border-slate-200 shadow-sm hover:-translate-y-3 hover:border-indigo-400 hover:shadow-indigo-100 hover:shadow-2xl transition-all duration-200 disabled:opacity-50 divide-y-2 divide-slate-100"
               >
                 <DominoHalf value={p[0]} />
                 <DominoHalf value={p[1]} />
@@ -314,7 +296,7 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
               <div className="text-5xl mb-4">🏆</div>
               <h3 className="text-2xl font-black text-slate-800 mb-2">Fim de Jogo</h3>
               <p className="text-slate-500 font-medium mb-8 leading-relaxed">{message}</p>
-              <button onClick={startNewGame} className="w-full py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-indigo-200 shadow-xl hover:bg-indigo-700 active:scale-95 transition-all">JOGAR NOVAMENTE</button>
+              <button onClick={startNewGame} className="w-full py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-indigo-200 shadow-xl hover:bg-indigo-700 transition-all">JOGAR NOVAMENTE</button>
             </div>
           </div>
         )}
@@ -323,5 +305,20 @@ const DominoGame = ({ onBack }: { onBack: () => void }) => {
     </div>
   );
 };
+
+const WeaponBtn = ({ icon, label, count, active, locked, onClick }: any) => (
+  <button 
+    onClick={onClick} disabled={locked} 
+    className={`flex-1 py-2 rounded-xl border-2 flex flex-col items-center transition-all 
+    ${active ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-slate-50 bg-white opacity-80'} 
+    ${locked ? 'grayscale cursor-not-allowed border-dashed opacity-40' : 'hover:border-indigo-100'}`}
+  >
+    <span className="text-base">{icon}</span>
+    <span className="text-[7px] font-black uppercase tracking-tighter">{label}</span>
+    <span className="text-[7px] text-indigo-600 font-bold mt-0.5">
+      {count === "∞" ? "Infinito" : `${count} Restante${count !== 1 ? 's' : ''}`}
+    </span>
+  </button>
+);
 
 export default DominoGame;
