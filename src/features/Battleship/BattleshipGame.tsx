@@ -207,4 +207,44 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
         {/* Tabuleiro Inimigo */}
         <div className="grid grid-cols-10 gap-0.5 bg-slate-200 p-0.5 rounded-lg mb-6 shadow-inner aspect-square">
           {enemyBoard.map((row, rIdx) => row.map((cell, cIdx) => (
-            <button key={`e-${r
+            <button key={`e-${rIdx}-${cIdx}`} onClick={() => handleCellClick(rIdx, cIdx)}
+              className={`aspect-square w-full rounded-sm flex items-center justify-center text-[10px] transition-all ${getCellColor(cell, true)}`}>
+              {cell.startsWith('hit') ? '💥' : cell === 'miss' ? '💧' : cell === 'radar' ? '📡' : ''}
+            </button>
+          )))}
+        </div>
+
+        {/* Sua Frota */}
+        <p className="text-[9px] font-black text-slate-400 uppercase mb-2 ml-1">Sua Frota (Defesa)</p>
+        <div className="grid grid-cols-10 gap-0.5 bg-slate-100 p-0.5 rounded-lg opacity-90 scale-[0.98]">
+          {playerBoard.map((row, rIdx) => row.map((cell, cIdx) => (
+            <div key={`p-${rIdx}-${cIdx}`} className={`aspect-square w-full rounded-sm flex items-center justify-center text-[8px] ${getCellColor(cell, false)}`}>
+              {cell.startsWith('ship') ? '🚢' : cell.startsWith('hit') ? '🔥' : ''}
+            </div>
+          )))}
+        </div>
+
+        {gameOver && (
+          <button onClick={() => window.location.reload()} className="w-full mt-4 py-3 bg-indigo-600 text-white font-black rounded-xl text-xs tracking-widest shadow-lg active:scale-95 transition-all">
+            NOVA PARTIDA
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const WeaponBtn = ({ icon, label, cost, active, locked, onClick }: any) => (
+  <button 
+    onClick={onClick} disabled={locked} 
+    className={`flex-1 py-2 rounded-xl border-2 flex flex-col items-center transition-all 
+    ${active ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-slate-50 bg-white opacity-80'} 
+    ${locked ? 'grayscale cursor-not-allowed border-dashed opacity-40' : 'hover:border-indigo-100'}`}
+  >
+    <span className="text-base">{icon}</span>
+    <span className="text-[7px] font-black uppercase tracking-tighter">{label}</span>
+    {cost && <span className="text-[7px] text-indigo-600 font-bold">{cost}p</span>}
+  </button>
+);
+
+export default BattleshipGame;
