@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
+// Tipagem básica
 type CellState = 'empty' | 'ship' | 'hit' | 'miss' | 'radar';
 type Board = CellState[][];
 type Weapon = 'normal' | 'radar' | 'cross';
 
 const GRID_SIZE = 10;
 
+// Definição da Frota Solicitada (Tamanhos dos navios)
+const FLEET_SIZES = [5, 4, 3, 3, 2];
+
 const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
   const { user, addPoints } = useAuth();
   
+  // Estados do Jogo
   const [enemyBoard, setEnemyBoard] = useState<Board>([]);
   const [playerBoard, setPlayerBoard] = useState<Board>([]);
   const [selectedWeapon, setSelectedWeapon] = useState<Weapon>('normal');
@@ -17,24 +22,89 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
   const [gameOver, setGameOver] = useState(false);
   const [message, setMessage] = useState('Capitão, posicione a frota para o combate!');
 
+  // Inicializa os tabuleiros
   useEffect(() => {
-    setEnemyBoard(generateRandomBoard(10)); // 10 navios inimigos
-    setPlayerBoard(generateRandomBoard(10)); // 10 navios seus
+    setEnemyBoard(generateRandomBoardWithFleet()); // Gera frota inimiga
+    setPlayerBoard(generateRandomBoardWithFleet()); // Gera sua frota
   }, []);
 
-  function generateRandomBoard(shipCount: number) {
-    const board = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill('empty'));
-    let ships = 0;
-    while (ships < shipCount) {
-      const r = Math.floor(Math.random() * GRID_SIZE);
-      const c = Math.floor(Math.random() * GRID_SIZE);
-      if (board[r][c] === 'empty') {
-        board[r][c] = 'ship';
-        ships++;
+  // --- NOVA LÓGICA DE GERAÇÃO DE TABULEIRO COM FROTA MISTA ---
+  function generateRandomBoardWithFleet(): Board {
+    let board: Board;
+    let allPlaced = false;
+
+    // Loop principal: Tenta gerar o tabuleiro inteiro até conseguir colocar todos os navios
+    while (!allPlaced) {
+      board = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill('empty'));
+      allPlaced = true;
+
+      // Função auxiliar local para tentar colocar um navio específico
+      function attemptPlaceShip(boardToCheck: Board, size: number): boolean {
+        // Tenta N vezes encontrar uma posição válida para este navio
+        for (let attempt = 0; attempt < 100; attempt++) {
+          const isHorizontal = Math.random() < 0.5; // Orientação aleatória
+          const r = Math.floor(Math.random() * GRID_SIZE);
+          const c = Math.floor(Math.random() * GRID_SIZE);
+
+          let canPlace = true;
+          if (isHorizontal) {
+            // Verifica limites horizontais
+            if (c + size > GRID_SIZE) {
+              canPlace = false;
+            } else {
+              // Verifica sobreposição horizontal
+              for (let i = 0; i < size; i++) {
+                if (boardToCheck[r][c + i] !== 'empty') {
+                  canPlace = false;
+                  break;
+                }
+              }
+            }
+          } else {
+            // Verifica limites verticais
+            if (r + size > GRID_SIZE) {
+              canPlace = false;
+            } else {
+              // Verifica sobreposição vertical
+              for (let i = 0; i < size; i++) {
+                if (boardToCheck[r + i][c] !== 'empty') {
+                  canPlace = false;
+                  break;
+                }
+              }
+            }
+          }
+
+          // Se a posição for válida, coloca o navio e retorna sucesso
+          if (canPlace) {
+            if (isHorizontal) {
+              for (let i = 0; i < size; i++) {
+                boardToCheck[r][c + i] = 'ship';
+              }
+            } else {
+              for (let i = 0; i < size; i++) {
+                boardToCheck[r + i][c] = 'ship';
+              }
+            }
+            return true; 
+          }
+        }
+        return false; // Falhou em colocar este navio após N tentativas
+      }
+
+      // Tentar colocar cada navio da frota oficial
+      for (const size of FLEET_SIZES) {
+        if (!attemptPlaceShip(board, size)) {
+          allPlaced = false; // Falhou em colocar um navio, reinicia o tabuleiro inteiro
+          break; 
+        }
       }
     }
-    return board;
+
+    return board!; // Garante o retorno de um tabuleiro válido
   }
+
+  // --- RESTO DO CÓDIGO PERMANECE IGUAL ---
 
   const saveVictory = async () => {
     try {
@@ -43,8 +113,8 @@ const BattleshipGame = ({ onBack }: { onBack: () => void }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: user?.email,
-          game_id: 2, 
-          points: 20
+          game_id: 2, // ID da Batalha Naval no seu banco
+          points: 20  // Pontuação por vitória no grid 10x10 com frota
         })
       });
       addPoints(20);
